@@ -3,8 +3,8 @@
 import { useLocale } from "@/lib/stores/locale";
 import { getT } from "@/lib/i18n";
 
-function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded-lg bg-muted ${className}`} />;
+function Skeleton({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return <div className={`animate-pulse rounded-lg bg-muted ${className}`} style={style} />;
 }
 
 export default function SupervisorLoading() {
