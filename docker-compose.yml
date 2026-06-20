@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: transport_mr_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: transport_user
+      POSTGRES_PASSWORD: transport_secure_pass_2024
+      POSTGRES_DB: transport_mr
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U transport_user -d transport_mr"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Next.js Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: transport_mr_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://transport_user:transport_secure_pass_2024@postgres:5432/transport_mr
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-super-secret-transport-mr-2024-change-me}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .env.local:/app/.env.local:ro
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  default:
+    name: transport_mr_network

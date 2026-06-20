@@ -1,0 +1,490 @@
+// ============================================================
+// TRANSPORT-MR — Prisma Schema
+// SaaS Multi-tenant Transport Management Platform
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── ENUMS ────────────────────────────────────────────────────
+
+enum UserRole {
+  SUPERVISEUR  // Propriétaire plateforme — accès global, crée les sociétés
+  SUPER_ADMIN
+  DIRECTOR
+  AGENCY_MANAGER
+  AGENT        // Guichetier
+  CASHIER      // Caissier
+  CONTROLLER   // Contrôleur
+  DRIVER       // Chauffeur
+}
+
+enum BusStatus {
+  ACTIVE
+  MAINTENANCE
+  RETIRED
+}
+
+enum TripStatus {
+  SCHEDULED
+  BOARDING
+  DEPARTED
+  ARRIVED
+  CANCELLED
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  NO_SHOW
+  BOARDED
+}
+
+enum ParcelStatus {
+  RECEIVED
+  IN_TRANSIT
+  ARRIVED
+  DELIVERED
+  RETURNED
+}
+
+enum BaggageStatus {
+  REGISTERED
+  LOADED
+  DELIVERED
+}
+
+enum PaymentMethod {
+  CASH
+  MOBILE_MONEY
+  BANK_TRANSFER
+  CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  PARTIAL
+}
+
+enum ExpenseCategory {
+  FUEL
+  MAINTENANCE
+  SALARY
+  RENT
+  UTILITIES
+  INSURANCE
+  OTHER
+}
+
+enum SeatClass {
+  STANDARD
+  VIP
+  COUCHETTE
+}
+
+// ── CORE ENTITIES ─────────────────────────────────────────────
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String
+  nameAr      String?
+  logo        String?
+  phone       String?
+  email       String?  @unique
+  address     String?
+  taxId       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  agencies    Agency[]
+  users       User[]
+  routes      Route[]
+
+  @@map("companies")
+}
+
+model Agency {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  nameAr      String?
+  city        String
+  address     String?
+  phone       String?
+  email       String?
+  isActive    Boolean  @default(true)
+  latitude    Float?
+  longitude   Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  users       User[]
+  departures  Trip[]   @relation("DepartureAgency")
+  arrivals    Trip[]   @relation("ArrivalAgency")
+  sentParcels Parcel[] @relation("SenderAgency")
+  recvParcels Parcel[] @relation("ReceiverAgency")
+  cashRegisters CashRegister[]
+  expenses    Expense[]
+
+  @@index([companyId])
+  @@map("agencies")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  companyId     String?
+  agencyId      String?
+  name          String
+  email         String    @unique
+  emailVerified DateTime?
+  password      String?
+  phone         String?
+  image         String?
+  role          UserRole  @default(AGENT)
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  company       Company?  @relation(fields: [companyId], references: [id])
+  agency        Agency?   @relation(fields: [agencyId], references: [id])
+  accounts      Account[]
+  sessions      Session[]
+  reservations  Reservation[]
+  payments      Payment[]
+  auditLogs     AuditLog[]
+  driverTrips   Trip[]    @relation("TripDriver")
+
+  @@index([companyId])
+  @@index([agencyId])
+  @@index([email])
+  @@map("users")
+}
+
+// NextAuth required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ── TRANSPORT ENTITIES ────────────────────────────────────────
+
+model Route {
+  id            String   @id @default(cuid())
+  companyId     String
+  originCity    String
+  destinCity    String
+  distanceKm    Int?
+  durationHours Float?
+  basePrice     Float
+  vipPrice      Float?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company       Company  @relation(fields: [companyId], references: [id])
+  trips         Trip[]
+
+  @@index([companyId])
+  @@unique([companyId, originCity, destinCity])
+  @@map("routes")
+}
+
+model Bus {
+  id             String    @id @default(cuid())
+  companyId      String
+  plate          String    @unique
+  brand          String?
+  model          String?
+  year           Int?
+  totalSeats     Int
+  vipSeats       Int       @default(0)
+  status         BusStatus @default(ACTIVE)
+  color          String?
+  notes          String?
+  lastMaintenance DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  trips          Trip[]
+
+  @@index([companyId])
+  @@map("buses")
+}
+
+model Trip {
+  id               String     @id @default(cuid())
+  routeId          String
+  busId            String
+  driverId         String?
+  departureAgencyId String
+  arrivalAgencyId   String
+  departureTime    DateTime
+  arrivalTime      DateTime?
+  status           TripStatus @default(SCHEDULED)
+  notes            String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  route            Route      @relation(fields: [routeId], references: [id])
+  bus              Bus        @relation(fields: [busId], references: [id])
+  driver           User?      @relation("TripDriver", fields: [driverId], references: [id])
+  departureAgency  Agency     @relation("DepartureAgency", fields: [departureAgencyId], references: [id])
+  arrivalAgency    Agency     @relation("ArrivalAgency", fields: [arrivalAgencyId], references: [id])
+  reservations     Reservation[]
+  parcels          Parcel[]
+  manifest         Manifest?
+
+  @@index([routeId])
+  @@index([busId])
+  @@index([departureTime])
+  @@map("trips")
+}
+
+// ── PASSENGER & RESERVATION ───────────────────────────────────
+
+model Passenger {
+  id           String   @id @default(cuid())
+  fullName     String
+  phone        String
+  idNumber     String?
+  email        String?
+  address      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  reservations Reservation[]
+
+  @@index([phone])
+  @@map("passengers")
+}
+
+model Reservation {
+  id            String            @id @default(cuid())
+  ticketNumber  String            @unique @default(cuid())
+  passengerId   String
+  tripId        String
+  agentId       String
+  seatNumber    Int
+  seatClass     SeatClass         @default(STANDARD)
+  status        ReservationStatus @default(CONFIRMED)
+  basePrice     Float
+  totalPrice    Float
+  qrCode        String?
+  boardedAt     DateTime?
+  notes         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  deletedAt     DateTime?
+
+  passenger     Passenger @relation(fields: [passengerId], references: [id])
+  trip          Trip      @relation(fields: [tripId], references: [id])
+  agent         User      @relation(fields: [agentId], references: [id])
+  baggage       Baggage[]
+  payment       Payment?
+
+  @@index([passengerId])
+  @@index([tripId])
+  @@index([ticketNumber])
+  @@map("reservations")
+}
+
+// ── BAGGAGE ───────────────────────────────────────────────────
+
+model Baggage {
+  id              String        @id @default(cuid())
+  reservationId   String
+  weightKg        Float
+  quantity        Int           @default(1)
+  description     String?
+  surchargePrice  Float         @default(0)
+  status          BaggageStatus @default(REGISTERED)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  reservation     Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([reservationId])
+  @@map("baggages")
+}
+
+// ── PARCELS ───────────────────────────────────────────────────
+
+model Parcel {
+  id               String       @id @default(cuid())
+  trackingNumber   String       @unique @default(cuid())
+  tripId           String?
+  senderAgencyId   String
+  receiverAgencyId String
+  senderName       String
+  senderPhone      String
+  receiverName     String
+  receiverPhone    String
+  description      String?
+  weightKg         Float
+  price            Float
+  status           ParcelStatus @default(RECEIVED)
+  qrCode           String?
+  notes            String?
+  receivedAt       DateTime     @default(now())
+  deliveredAt      DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  trip             Trip?   @relation(fields: [tripId], references: [id])
+  senderAgency     Agency  @relation("SenderAgency", fields: [senderAgencyId], references: [id])
+  receiverAgency   Agency  @relation("ReceiverAgency", fields: [receiverAgencyId], references: [id])
+  payment          Payment?
+
+  @@index([senderAgencyId])
+  @@index([receiverAgencyId])
+  @@index([trackingNumber])
+  @@map("parcels")
+}
+
+// ── FINANCE ───────────────────────────────────────────────────
+
+model Payment {
+  id              String        @id @default(cuid())
+  reservationId   String?       @unique
+  parcelId        String?       @unique
+  agentId         String
+  amount          Float
+  method          PaymentMethod @default(CASH)
+  status          PaymentStatus @default(PAID)
+  reference       String?
+  notes           String?
+  paidAt          DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  reservation     Reservation? @relation(fields: [reservationId], references: [id])
+  parcel          Parcel?      @relation(fields: [parcelId], references: [id])
+  agent           User         @relation(fields: [agentId], references: [id])
+
+  @@index([agentId])
+  @@map("payments")
+}
+
+model CashRegister {
+  id         String   @id @default(cuid())
+  agencyId   String
+  date       DateTime @default(now()) @db.Date
+  openAmount Float    @default(0)
+  closeAmount Float?
+  totalIn    Float    @default(0)
+  totalOut   Float    @default(0)
+  isOpen     Boolean  @default(true)
+  openedAt   DateTime @default(now())
+  closedAt   DateTime?
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  agency     Agency   @relation(fields: [agencyId], references: [id])
+  expenses   Expense[]
+
+  @@index([agencyId])
+  @@index([date])
+  @@map("cash_registers")
+}
+
+model Expense {
+  id           String          @id @default(cuid())
+  agencyId     String
+  registerId   String?
+  category     ExpenseCategory @default(OTHER)
+  amount       Float
+  description  String
+  date         DateTime        @default(now())
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  agency       Agency       @relation(fields: [agencyId], references: [id])
+  register     CashRegister? @relation(fields: [registerId], references: [id])
+
+  @@index([agencyId])
+  @@index([date])
+  @@map("expenses")
+}
+
+// ── MANIFEST & AUDIT ──────────────────────────────────────────
+
+model Manifest {
+  id        String   @id @default(cuid())
+  tripId    String   @unique
+  data      Json
+  printedAt DateTime?
+  createdAt DateTime @default(now())
+
+  trip      Trip @relation(fields: [tripId], references: [id])
+
+  @@map("manifests")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entity     String
+  entityId   String?
+  oldData    Json?
+  newData    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user       User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

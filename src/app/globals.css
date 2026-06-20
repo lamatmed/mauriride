@@ -1,0 +1,247 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Cairo:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 222 47% 11%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 98%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 174 72% 40%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 174 72% 40%;
+    --radius: 0.625rem;
+    --sidebar: 0 0% 100%;
+    --sidebar-border: 214 32% 91%;
+  }
+
+  .dark {
+    --background: 222 47% 6%;
+    --sidebar: 222 47% 11%;
+    --sidebar-border: 0 0% 100% / 0.08;
+    --foreground: 210 40% 96%;
+    --card: 222 47% 9%;
+    --card-foreground: 210 40% 96%;
+    --popover: 222 47% 9%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 222 47% 11%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 33% 14%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 217 33% 12%;
+    --muted-foreground: 215 20% 58%;
+    --accent: 174 72% 40%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 217 33% 16%;
+    --input: 217 33% 16%;
+    --ring: 174 72% 40%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html[lang="ar"] body {
+    font-family: "Cairo", "Inter", system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  /* ── Login page ─────────────────────────────────────────── */
+  .login-brand-panel {
+    background: linear-gradient(145deg, #080f1f 0%, #0d1f3c 45%, #0a1e1e 100%);
+  }
+
+  .login-dot-grid {
+    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.07) 1px, transparent 0);
+    background-size: 30px 30px;
+  }
+
+  /* ── Layout ────────────────────────────────────────────── */
+  .sidebar {
+    @apply fixed start-0 top-0 h-full z-40 flex flex-col;
+    background-color: hsl(var(--sidebar));
+    border-inline-end: 1px solid hsl(var(--sidebar-border));
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s ease;
+  }
+
+  .main-content {
+    @apply ml-64 min-h-screen bg-muted;
+  }
+
+  /* ── Cards ──────────────────────────────────────────────── */
+  .card-stat {
+    @apply bg-card text-card-foreground rounded-xl p-6 shadow-card border border-border hover:border-teal-300 transition-all duration-200;
+  }
+
+  .card-stat-icon {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center;
+  }
+
+  /* ── Page header ─────────────────────────────────────────── */
+  .page-header {
+    @apply flex items-center justify-between mb-8;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold text-primary;
+  }
+
+  .page-subtitle {
+    @apply text-sm text-muted-foreground mt-1;
+  }
+
+  /* ── Badges ──────────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-success  { @apply bg-emerald-100 text-emerald-700; }
+  .badge-warning  { @apply bg-amber-100 text-amber-700; }
+  .badge-error    { @apply bg-red-100 text-red-700; }
+  .badge-info     { @apply bg-blue-100 text-blue-700; }
+  .badge-neutral  { @apply bg-slate-100 text-slate-700; }
+  .badge-teal     { @apply bg-teal-100 text-teal-700; }
+  .badge-primary  { @apply bg-primary text-white; }
+
+  /* ── Tables ──────────────────────────────────────────────── */
+  .data-table {
+    @apply w-full text-sm;
+  }
+
+  .data-table thead tr {
+    @apply bg-muted border-b border-border;
+  }
+
+  .data-table thead th {
+    @apply px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider;
+  }
+
+  .data-table tbody tr {
+    @apply border-b border-border hover:bg-muted/50 transition-colors;
+  }
+
+  .data-table tbody td {
+    @apply px-4 py-3 text-sm text-foreground;
+  }
+
+  /* ── Forms ───────────────────────────────────────────────── */
+  .form-label {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  .form-input {
+    @apply w-full px-3 py-2 text-sm border border-input rounded-md bg-background text-foreground
+           focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent
+           placeholder:text-muted-foreground transition-all;
+  }
+
+  .form-error {
+    @apply text-xs text-destructive mt-1;
+  }
+
+  /* ── Buttons ─────────────────────────────────────────────── */
+  .btn-primary {
+    @apply bg-teal-500 hover:bg-teal-600 text-white font-medium px-4 py-2 rounded-lg
+           text-sm transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed
+           flex items-center gap-2 shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply bg-white hover:bg-muted text-foreground font-medium px-4 py-2 rounded-lg
+           text-sm border border-border transition-all duration-150
+           flex items-center gap-2;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent hover:bg-muted text-foreground font-medium px-3 py-2 rounded-lg
+           text-sm transition-all duration-150 flex items-center gap-2;
+  }
+
+  .btn-danger {
+    @apply bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-lg
+           text-sm transition-all duration-150 flex items-center gap-2;
+  }
+
+  /* ── Status dots ──────────────────────────────────────────── */
+  .status-dot {
+    @apply w-2 h-2 rounded-full flex-shrink-0;
+  }
+
+  .status-dot-green  { @apply bg-emerald-500; }
+  .status-dot-amber  { @apply bg-amber-500; }
+  .status-dot-red    { @apply bg-red-500; }
+  .status-dot-gray   { @apply bg-slate-400; }
+  .status-dot-blue   { @apply bg-blue-500; }
+  .status-dot-teal   { @apply bg-teal-500; }
+
+  /* ── Scrollbar ───────────────────────────────────────────── */
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+
+  /* ── Command palette overlay ─────────────────────────────── */
+  .cmdk-overlay {
+    @apply fixed inset-0 bg-primary/40 backdrop-blur-sm z-50 flex items-start justify-center pt-24;
+  }
+
+  .cmdk-dialog {
+    @apply bg-card text-card-foreground w-full max-w-2xl rounded-2xl shadow-modal border border-border overflow-hidden;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .grid-auto-fill {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+}
