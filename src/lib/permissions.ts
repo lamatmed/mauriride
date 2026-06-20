@@ -2,6 +2,7 @@ import { UserRole } from "@prisma/client";
 
 // ── Role hierarchy ────────────────────────────────────────────
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
+  SUPERVISEUR:    999,
   SUPER_ADMIN:    100,
   DIRECTOR:       80,
   AGENCY_MANAGER: 60,
@@ -73,6 +74,7 @@ export function canAccess(role: UserRole, ...permissions: Permission[]): boolean
 }
 
 export const ROLE_LABELS: Record<UserRole, string> = {
+  SUPERVISEUR:    "Superviseur",
   SUPER_ADMIN:    "Super Administrateur",
   DIRECTOR:       "Directeur",
   AGENCY_MANAGER: "Responsable Agence",
@@ -83,6 +85,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 export const ROLE_COLORS: Record<UserRole, string> = {
+  SUPERVISEUR:    "bg-violet-600 text-white",
   SUPER_ADMIN:    "bg-primary text-white",
   DIRECTOR:       "bg-teal-600 text-white",
   AGENCY_MANAGER: "bg-teal-500 text-white",

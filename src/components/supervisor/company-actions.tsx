@@ -104,7 +104,7 @@ export function CompanyActions({ company }: { company: Company }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button type="button" aria-label={t.actions ?? "Actions"} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+          <button type="button" aria-label={getT(locale).common.actions} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
             <MoreVertical className="h-4 w-4 text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>

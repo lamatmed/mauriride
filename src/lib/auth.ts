@@ -62,7 +62,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (session.email) token.email = session.email;
       }
       if (user) {
-        token.id = user.id;
+        token.id = user.id as string;
         token.role = (user as { role: UserRole }).role;
         token.companyId = (user as { companyId: string | null }).companyId;
         token.agencyId = (user as { agencyId: string | null }).agencyId;
