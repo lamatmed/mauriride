@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { LocaleProvider } from "@/components/providers/locale-provider";
-import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: {
@@ -33,7 +32,6 @@ export default function RootLayout({
           <LocaleProvider>
             {children}
           </LocaleProvider>
-          <Toaster />
         </ThemeProvider>
       </body>
     </html>

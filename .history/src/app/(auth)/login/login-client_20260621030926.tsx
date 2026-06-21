@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { useLocale } from "@/lib/stores/locale";
 import { getT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+
 const schemaFr = z.object({
   email:    z.string().email("Email invalide"),
   password: z.string().min(1, "Mot de passe requis"),
@@ -75,7 +75,7 @@ const onSubmit = async (data: LoginForm) => {
 
     // ✅ success
     setIsLoading(false);
-    toast.success("Connexion réussie");
+    
     router.push("/dashboard");
     router.refresh();
 
