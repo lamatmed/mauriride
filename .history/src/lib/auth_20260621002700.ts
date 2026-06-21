@@ -1,4 +1,5 @@
 import NextAuth from "next-auth";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
@@ -11,61 +12,43 @@ const loginSchema = z.object({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  session: { strategy: "jwt" },
   trustHost: true,
-
-  // 👉 IMPORTANT: stable on Vercel
-  session: {
-    strategy: "jwt",
-  },
-
   pages: {
     signIn: "/login",
     error: "/login",
   },
-
   providers: [
     Credentials({
-      name: "Credentials",
-
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-
       async authorize(credentials) {
         const parsed = loginSchema.safeParse(credentials);
-
         if (!parsed.success) return null;
 
-        // 🔥 lightweight query (important for Vercel)
         const user = await prisma.user.findUnique({
           where: { email: parsed.data.email },
+          include: { agency: true, company: true },
         });
 
         if (!user || !user.password || !user.isActive) return null;
 
-        const isValid = await bcrypt.compare(
-          parsed.data.password,
-          user.password
-        );
+        const valid = await bcrypt.compare(parsed.data.password, user.password);
+        if (!valid) return null;
 
-        if (!isValid) return null;
-
-        // optional (non-blocking logic safe)
-        try {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { lastLoginAt: new Date() },
-          });
-        } catch (e) {
-          console.error("lastLoginAt update failed:", e);
-        }
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { lastLoginAt: new Date() },
+        });
 
         return {
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role as UserRole,
+          role: user.role,
           companyId: user.companyId,
           agencyId: user.agencyId,
           image: user.image,
@@ -73,26 +56,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-      if (user.id) token.id = user.id;
-      if ((user as any).role) token.role = (user as any).role;
-      if ((user as any).companyId) token.companyId = (user as any).companyId;
-      if ((user as any).agencyId) token.agencyId = (user as any).agencyId;
-    }
-    return token;
-    },
-
-    async session({ session, token }) {
-      if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
-        (session.user as any).companyId = token.companyId;
-        (session.user as any).agencyId = token.agencyId;
+    async jwt({ token, user, trigger, session }) {
+      if (trigger === "update" && session) {
+        if (session.name)  token.name  = session.name;
+        if (session.email) token.email = session.email;
       }
-
+      if (user) {
+        token.id = user.id as string;
+        token.role = (user as { role: UserRole }).role;
+        token.companyId = (user as { companyId: string | null }).companyId;
+        token.agencyId = (user as { agencyId: string | null }).agencyId;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as UserRole;
+        session.user.companyId = token.companyId as string | null;
+        session.user.agencyId = token.agencyId as string | null;
+      }
       return session;
     },
   },
