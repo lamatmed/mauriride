@@ -76,7 +76,7 @@ const onSubmit = async (data: LoginForm) => {
     // ✅ success
     setIsLoading(false);
     toast.success("Connexion réussie");
-    window.location.href = "/dashboard";
+    router.push("/dashboard");
     router.refresh();
 
   } catch (e) {
