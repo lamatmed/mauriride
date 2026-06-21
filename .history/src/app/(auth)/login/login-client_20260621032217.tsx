@@ -63,13 +63,7 @@ const onSubmit = async (data: LoginForm) => {
       password: data.password,
       redirect: false,
     });
-console.log(result);
 
-if (!result?.error) {
-  console.log("Avant router.push");
-  router.push("/dashboard");
-  console.log("Après router.push");
-}
     clearTimeout(timeout);
 
     // ❌ erreur login

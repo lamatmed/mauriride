@@ -63,13 +63,7 @@ const onSubmit = async (data: LoginForm) => {
       password: data.password,
       redirect: false,
     });
-console.log(result);
 
-if (!result?.error) {
-  console.log("Avant router.push");
-  router.push("/dashboard");
-  console.log("Après router.push");
-}
     clearTimeout(timeout);
 
     // ❌ erreur login
@@ -91,7 +85,19 @@ if (!result?.error) {
     setError(t.errorOccurred || "Erreur inconnue");
   }
 };
+const result = await signIn("credentials", {
+  email: data.email,
+  password: data.password,
+  redirect: false,
+});
 
+console.log(result);
+
+if (!result?.error) {
+  console.log("Avant router.push");
+  router.push("/dashboard");
+  console.log("Après router.push");
+}
   const stats = [
     { value: String(agencyCount), label: t.agencies        },
     { value: "200+",              label: t.dailyPassengers },
